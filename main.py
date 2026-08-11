@@ -1,13 +1,21 @@
 """
-CBuild executable file for building C programs and other
+CBuild executable file for building C programs and other.
+
+One file build system for various projects
 """
 
 import argparse
 import os
 import signal
+import subprocess
 import sys
+from abc import abstractmethod, ABC
 from pathlib import Path
-from typing import Final, Protocol
+from typing import Final
+
+from common_py_lib.entities.Formatter import TextAnsiFormatter
+
+start_path: Final[str] = Path().parent.absolute().as_posix()
 
 
 class Consts:
@@ -43,55 +51,33 @@ class Path_master:
         pass
 
 
-class Format:
+class Config_master:
     """
-    Utility class for text formater
-    Includes print functions in different colors and underline technology.
+    Read config file of the pipeline
     """
 
-    @staticmethod
-    def prRed(string: str):
-        print("\033[91m {}\033[00m".format(string))
+    def __init__(self, pipeline_file_name):
+        pass
 
-    @staticmethod
-    def prGreen(string: str):
-        print("\033[92m {}\033[00m".format(string))
-
-    @staticmethod
-    def prYellow(string: str):
-        print("\033[93m {}\033[00m".format(string))
-
-    @staticmethod
-    def prCyan(string: str):
-        print("\033[96m {}\033[00m".format(string))
-
-    @staticmethod
-    def prUnderline(string: str):
-        print("\033[4m {}\033[0m".format(string))
+    def read_config(self):
+        pass
 
 
-class Pipeline(Protocol):
+class Pipeline(ABC):
     """
     Abstract protocol for build variants
     """
+    stages: list[str]
 
     def __init__(self):
         pass
 
-    def preprocess(self) -> None: ...
-
-    def assembly(self) -> None: ...
-
-    def compile(self) -> None: ...
-
-    def link(self) -> None: ...
-
-    def all_build_stages(self) -> None: ...  # same as rebuild
-
-    def deploy(self) -> None: ...
+    @abstractmethod
+    def run_pipeline(self):
+        pass
 
 
-class C_pipeline:
+class C_pipeline(Pipeline):
     """
     Pipeline for usual C programs.
     """
@@ -115,7 +101,16 @@ class C_pipeline:
         pass
 
 
-class Embedded_pipeline:
+class Phone_pipeline(Pipeline):
+    """
+    Pipeline for C# android experience
+    """
+
+    def __init__(self):
+        super().__init__()
+
+
+class Embedded_pipeline(Pipeline):
     """
     Pipeline for embedded devices, such as ESP32 or ESP8266.
     Deploy on microcontroller
@@ -140,7 +135,7 @@ class Embedded_pipeline:
         pass
 
 
-class Kernel_pipeline:
+class Kernel_pipeline(Pipeline):
     """
     Pipeline for building linux kernel and deploy it on emulator
     """
@@ -150,51 +145,52 @@ class Kernel_pipeline:
 
     def assembly(self) -> None:
         # nasm -f elf32 start_point.asm -o kasm.o
-        Format.prYellow('Compiling assembler code')
+        TextAnsiFormatter.prYellow('Compiling assembler code')
         if Path_master.current_dir_files.__contains__('start_point.asm'):
-            op_res = os.system(f'{Consts.ASSEMBLY_COMPILER} -f elf32 start_point.asm -o kasm.o')
+            op_res = subprocess.run(f'{Consts.ASSEMBLY_COMPILER} -f elf32 start_point.asm -o kasm.o')
             if op_res == 0:
                 print('Successful command execution')
             else:
-                Format.prRed(f'Not successful command - {op_res} code')
+                TextAnsiFormatter.prRed(f'Not successful command - {op_res} code')
             return
         else:
-            Format.prRed('Current directory not contains asm file')
+            TextAnsiFormatter.prRed('Current directory not contains asm file')
 
     def compile(self) -> None:
         # gcc -m32 -c main.c -o kc.o
-        Format.prYellow('Compiling "C" code')
+        TextAnsiFormatter.prYellow('Compiling "C" code')
         if Path_master.current_dir_files.__contains__('main.c'):
-            op_res = os.system(f'{Consts.C_COMPILER} -m32 -c main.c -o kc.o')
+            op_res = subprocess.run(f'{Consts.C_COMPILER} -m32 -c main.c -o kc.o')
             if op_res == 0:
                 print('Successful command execution')
             else:
-                Format.prRed(f'Not successful command - {op_res} code')
+                TextAnsiFormatter.prRed(f'Not successful command - {op_res} code')
             return
         else:
-            Format.prRed('Current directory not contains main.c file')
+            TextAnsiFormatter.prRed('Current directory not contains main.c file')
 
     def link(self) -> None:
         # ld -m elf_i386 -T link.ld -o kernel kasm.o kc.o
-        Format.prYellow('Using linking')
+        TextAnsiFormatter.prYellow('Using linking')
         if Path_master.current_dir_files.__contains__('main.c') and Path_master.current_dir_files.__contains__('start_point.asm'):
-            op_res = os.system(f'{Consts.LINKER} -m elf_i386 -T link.ld -o kernel kasm.o kc.o')
+            f'{Consts.ASSEMBLY_COMPILER} -f elf32 start_point.asm -o kasm.o'
+            op_res = subprocess.run(f'{Consts.LINKER} -m elf_i386 -T link.ld -o kernel kasm.o kc.o')
             if op_res == 0:
-                Format.prGreen('Successful command execution')
+                TextAnsiFormatter.prGreen('Successful command execution')
             else:
-                Format.prRed(f'Not successful command - {op_res} code')
-                Format.prYellow('Try with stack protector')
+                TextAnsiFormatter.prRed(f'Not successful command - {op_res} code')
+                TextAnsiFormatter.prYellow('Try with stack protector')
 
                 # gcc -fno-stack-protector -m32 -c main.c -o kc.o
-                another_try = os.system(f'{Consts.C_COMPILER} -fno-stack-protector -m32 -c main.c -o kc.o')
+                another_try = subprocess.run(f'{Consts.C_COMPILER} -fno-stack-protector -m32 -c main.c -o kc.o')
                 self.link()  # another try of linker usage
                 if another_try == 0:
-                    Format.prGreen('Success retry')
+                    TextAnsiFormatter.prGreen('Success retry')
                 else:
-                    Format.prRed('Still error')
+                    TextAnsiFormatter.prRed('Still error')
             return
         else:
-            Format.prRed('Current directory not contains any of compiled files')
+            TextAnsiFormatter.prRed('Current directory not contains any of compiled files')
 
     def all_build_stages(self) -> None:
         pass
@@ -212,6 +208,9 @@ class Pipeline_runner:
             pass
         else:
             pass
+
+    def check_for_pipelines(self):
+        pass
 
     def app_cycle(self):
         if sys.platform == 'linux':  # only linux is allowed, who will use windows to install another kernel
@@ -269,15 +268,15 @@ class Pipeline_runner:
 
         else:
             print(f'Your system is not allowed - {sys.platform}')
+            raise NotImplementedError('System is not allowed for use for CBuild')
 
 
 def configure_arg_parser(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument('-f', '--file', action='append', type=str, help='Use for start file in pipeline', required=True)
-    parser.add_argument('-p', '--pipeline', help='Use for pipeline in code deploy', required=False)
+    parser.add_argument('-p', '--pipeline', help='Use for pipeline in code deploy', required=True)
 
 
 def handle_critical_error(msg: str):
-    Format.prRed(msg)
+    TextAnsiFormatter.prRed(msg)
     exit(1)
 
 
@@ -289,7 +288,7 @@ def signal_handler(sig, frame):
     :return: None
     """
     print('\n')
-    Format.prYellow("Out program")
+    TextAnsiFormatter.prYellow("Out program")
     exit(0)
 
 
@@ -298,13 +297,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         prog=Consts.APP_NAME,
         usage='Pass start file and optionally choose your pipeline',
-        description='Custom build system for C programs and linux kernel',
+        description='Custom build system for C programs and linux kernel and other and other',
         epilog='Bye')
 
     configure_arg_parser(parser)
     args = parser.parse_args(sys.argv)
     if args.file:
-        print(f"File: {args.file}")
+        print(f"Pipeline: {args.file}")
 
     runner = Pipeline_runner()
+    runner.check_for_pipelines()
     runner.app_cycle()
