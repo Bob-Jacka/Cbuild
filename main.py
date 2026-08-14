@@ -5,10 +5,13 @@ Supports projects only on big C: C, C++, C#
 """
 
 import argparse
+import os.path
 import signal
+import sys
 from pathlib import Path
 from typing import Final
 
+from core import Path_master
 from core.config.Config import Config_master
 from core.pipelines.Pipeline_runner import Pipeline_runner
 
@@ -18,8 +21,8 @@ try:
 except ModuleNotFoundError:
     print('Import private local library first')
 
-VERSION: Final[str] = '0.2.3'
-CURRENT_DIR: Final[str] = Path().parent.absolute().as_posix()  # path to current dir where script is stored
+VERSION: Final[str] = '0.2.4'
+Path_master.CURRENT_DIR = Path().parent.absolute().as_posix()  # path to current dir where script is stored
 
 
 def configure_arg_parser(parser: argparse.ArgumentParser) -> None:
@@ -54,7 +57,11 @@ if __name__ == '__main__':
     configure_arg_parser(parser)
     # args = parser.parse_args(sys.argv)
 
-    config = Config_master(CURRENT_DIR).read_config()
+    if len(sys.argv) == 1:
+        config = Config_master(CURRENT_DIR).read_config()
+    else:
+        print(os.path.abspath(sys.argv[1]))
+        config = Config_master(os.path.abspath(sys.argv[1])).read_config()
     runner = Pipeline_runner(config)
 
     while True:

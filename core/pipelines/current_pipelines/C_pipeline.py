@@ -21,7 +21,7 @@ class C_pipeline(Pipeline):
     def preprocess(self) -> None:
         pass
 
-    def assembly(self) -> None:
+    def assemble(self) -> None:
         pass
 
     def compile(self) -> None:

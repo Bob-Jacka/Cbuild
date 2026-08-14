@@ -46,7 +46,7 @@ class Pipeline_runner:
                     print(f'Exit from {self.active_pipeline.pipeline_name} build system')
                     break
 
-                function = getattr(self.active_pipeline, self.active_pipeline.stages[user_input])
+                function = getattr(self.active_pipeline, self.active_pipeline.stages[user_input].lower())
                 function()
 
         else:

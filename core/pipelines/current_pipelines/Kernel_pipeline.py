@@ -1,5 +1,6 @@
-import subprocess
+import os
 
+from core.Path_master import check_for_file
 from core.Tools import Tools
 from core.pipelines.Pipeline import Pipeline
 
@@ -12,7 +13,7 @@ kernel_tools = {
     'assemble': 'nasm',  # favourite assembly compiler
     'compile': 'gcc',  # favourite c compiler
     'link': 'ld',  # favourite linker
-    'deploy': 'qemu'
+    'deploy': 'qemu-system-i386 -kernel'
 }
 
 
@@ -25,13 +26,13 @@ class Kernel_pipeline(Pipeline):
         self.instruments = Tools(**kernel_tools)
         super().__init__(pipeline_name)
 
-    def assembly(self) -> None:
+    def assemble(self) -> None:
         # nasm -f elf32 start_point.asm -o kasm.o
         TextAnsiFormatter.prYellow('Compiling assembler code')
-        if Path_master.current_dir_files.__contains__('start_point.asm'):
-            op_res = subprocess.run(f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o').returncode
+        if check_for_file('start_point.asm'):
+            op_res = os.system(f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o')
             if op_res == 0:
-                print('Successful command execution')
+                TextAnsiFormatter.prGreen('Successful command execution')
             else:
                 TextAnsiFormatter.prRed(f'Not successful command - {op_res} code')
             return
@@ -41,10 +42,10 @@ class Kernel_pipeline(Pipeline):
     def compile(self) -> None:
         # gcc -m32 -c main.c -o kc.o
         TextAnsiFormatter.prYellow('Compiling "C" code')
-        if Path_master.current_dir_files.__contains__('main.c'):
-            op_res = subprocess.run(f'{self.instruments.compile} -m32 -c main.c -o kc.o').returncode
+        if check_for_file('main.c'):
+            op_res = os.system(f'{self.instruments.compile} -m32 -c main.c -o kc.o')
             if op_res == 0:
-                print('Successful command execution')
+                TextAnsiFormatter.prGreen('Successful command execution')
             else:
                 TextAnsiFormatter.prRed(f'Not successful command - {op_res} code')
             return
@@ -54,9 +55,9 @@ class Kernel_pipeline(Pipeline):
     def link(self) -> None:
         # ld -m elf_i386 -T link.ld -o kernel kasm.o kc.o
         TextAnsiFormatter.prYellow('Using linking')
-        if Path_master.current_dir_files.__contains__('main.c') and Path_master.current_dir_files.__contains__('start_point.asm'):
+        if check_for_file('main.c') and check_for_file('start_point.asm'):
             f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o'
-            op_res = subprocess.run(f'{self.instruments.link} -m elf_i386 -T link.ld -o kernel kasm.o kc.o').returncode
+            op_res = os.system(f'{self.instruments.link} -m elf_i386 -T link.ld -o kernel kasm.o kc.o')
             if op_res == 0:
                 TextAnsiFormatter.prGreen('Successful command execution')
             else:
@@ -64,7 +65,7 @@ class Kernel_pipeline(Pipeline):
                 TextAnsiFormatter.prYellow('Try with stack protector')
 
                 # gcc -fno-stack-protector -m32 -c main.c -o kc.o
-                another_try = subprocess.run(f'{self.instruments.compile} -fno-stack-protector -m32 -c main.c -o kc.o')
+                another_try = os.system(f'{self.instruments.compile} -fno-stack-protector -m32 -c main.c -o kc.o')
                 self.link()  # another try of linker usage
                 if another_try == 0:
                     TextAnsiFormatter.prGreen('Success retry')
@@ -78,4 +79,4 @@ class Kernel_pipeline(Pipeline):
         pass
 
     def deploy(self) -> None:
-        subprocess.run(f'{self.instruments.deploy} kernel')
+        os.system(f'{self.instruments.deploy} kernel')
