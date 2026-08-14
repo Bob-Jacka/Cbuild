@@ -7,3 +7,5 @@ CBuild is a build system, written in Python for embedded development, C programs
 ## Flags:
 
 -f for file to proceed (start file or main)
+
+## Example of usage:
