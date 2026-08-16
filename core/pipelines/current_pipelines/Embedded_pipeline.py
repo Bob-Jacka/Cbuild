@@ -1,11 +1,15 @@
+"""
+Especially for IDF framework
+"""
+
 from core.Tools import Tools
-from core.pipelines.Pipeline import Pipeline
+from core.pipelines.IPipeline import IPipeline
 
 embedded_tools = {
 
 }
 
-class Embedded_pipeline(Pipeline):
+class Embedded_pipeline(IPipeline):
     """
     Pipeline for embedded devices, such as ESP32 or ESP8266.
     Deploy on microcontroller

@@ -8,7 +8,6 @@ import argparse
 import os.path
 import signal
 import sys
-from pathlib import Path
 from typing import Final
 
 from core import Path_master
@@ -21,8 +20,7 @@ try:
 except ModuleNotFoundError:
     print('Import private local library first')
 
-VERSION: Final[str] = '0.2.4'
-Path_master.CURRENT_DIR = Path().parent.absolute().as_posix()  # path to current dir where script is stored
+VERSION: Final[str] = '0.3.4'
 
 
 def configure_arg_parser(parser: argparse.ArgumentParser) -> None:
@@ -55,10 +53,12 @@ if __name__ == '__main__':
         epilog='Bye')
 
     configure_arg_parser(parser)
-    # args = parser.parse_args(sys.argv)
 
+    # branch for local start
     if len(sys.argv) == 1:
-        config = Config_master(CURRENT_DIR).read_config()
+        config = Config_master(Path_master.CURRENT_DIR).read_config()
+
+    # branch for start with given path
     else:
         print(os.path.abspath(sys.argv[1]))
         config = Config_master(os.path.abspath(sys.argv[1])).read_config()

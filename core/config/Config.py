@@ -2,15 +2,15 @@ import dataclasses
 import os
 import re
 
-from core.pipelines.Pipeline import Pipeline
+from core.pipelines.IPipeline import IPipeline
 
 
 @dataclasses.dataclass
 class Config:
     config_name: str
-    pipelines: list[Pipeline]  # pipeline to run
+    pipelines: list[IPipeline]  # pipeline to run
 
-    def __init__(self, config_name: str, pipeline_list: list[Pipeline]):
+    def __init__(self, config_name: str, pipeline_list: list[IPipeline]):
         self.config_name = config_name
         self.pipelines = pipeline_list
 
@@ -26,7 +26,7 @@ class Config_master:
             print('Several configs, this functionality is not implemented')
         elif len(configs) == 0:
             raise Exception('No config found in directory, provide one or go away')
-        self.config = configs[0]
+        self.config: str = configs[0]
 
     def read_config(self) -> Config:
         """
@@ -38,14 +38,30 @@ class Config_master:
         from core.pipelines.current_pipelines.Embedded_pipeline import Embedded_pipeline
         from core.pipelines.current_pipelines.Mobile_pipeline import Mobile_pipeline
         config_name: str
-        pipelines: list[Pipeline] = list()
+        pipelines: list[IPipeline] = list()
         with open(self.config) as config:
-            config_name = self.config
+            config_name = self.config.removesuffix('.cbuild')
             config_data = config.readlines()
 
             for line in config_data:
                 line = line.strip()
+
                 if not line or line.startswith("#") or line.startswith('{') or line.startswith('}'):  # comment line
+                    continue
+
+                if line.startswith('Type'):
+                    if not match:
+                        print('Cannot read pipeline type')
+                        continue
+                    pipeline.type = re.match(r'Type\s+([^"]+)', line).group(1)
+                    continue
+
+                if line.startswith('Language'):
+                    match = re.match(r'Language\s+([^"]+)', line)
+                    if not match:
+                        print('Cannot read pipeline language')
+                        continue
+                    pipeline.language = match.group(1)
                     continue
 
                 if line.startswith("Pipeline "):

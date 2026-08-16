@@ -1,18 +1,20 @@
+"""
+Pipeline for Linux kernel modules
+"""
 from core.Tools import Tools
-from core.pipelines.IPipeline import IPipeline
+from core.pipelines import IPipeline
 
-c_tools = {
-
+module_tools = {
+    'assemble': 'nasm',  # favourite assembly compiler
+    'compile': 'gcc',  # favourite c compiler
+    'link': 'ld',  # favourite linker
+    'deploy': 'sudo insmod'
 }
 
 
-class C_pipeline(IPipeline):
-    """
-    Pipeline for usual C programs.
-    """
-
+class Module_pipeline(IPipeline):
     def __init__(self, pipeline_name: str):
-        self.instruments = Tools(**c_tools)
+        self.instruments = Tools(**module_tools)
         super().__init__(pipeline_name)
 
     def run_pipeline(self):

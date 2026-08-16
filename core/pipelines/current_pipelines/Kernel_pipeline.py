@@ -1,8 +1,6 @@
-import os
-
 from core.Path_master import check_for_file
 from core.Tools import Tools
-from core.pipelines.Pipeline import Pipeline
+from core.pipelines.IPipeline import IPipeline
 
 try:
     from common_py_lib.entities.Formatter import TextAnsiFormatter
@@ -17,7 +15,7 @@ kernel_tools = {
 }
 
 
-class Kernel_pipeline(Pipeline):
+class Kernel_pipeline(IPipeline):
     """
     Pipeline for building linux kernel and deploy it on emulator
     """
@@ -30,7 +28,7 @@ class Kernel_pipeline(Pipeline):
         # nasm -f elf32 start_point.asm -o kasm.o
         TextAnsiFormatter.prYellow('Compiling assembler code')
         if check_for_file('start_point.asm'):
-            op_res = os.system(f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o')
+            op_res = IPipeline.exec_command(f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o')
             if op_res == 0:
                 TextAnsiFormatter.prGreen('Successful command execution')
             else:
@@ -43,7 +41,7 @@ class Kernel_pipeline(Pipeline):
         # gcc -m32 -c main.c -o kc.o
         TextAnsiFormatter.prYellow('Compiling "C" code')
         if check_for_file('main.c'):
-            op_res = os.system(f'{self.instruments.compile} -m32 -c main.c -o kc.o')
+            op_res = IPipeline.exec_command(f'{self.instruments.compile} -m32 -c main.c -o kc.o')
             if op_res == 0:
                 TextAnsiFormatter.prGreen('Successful command execution')
             else:
@@ -57,7 +55,7 @@ class Kernel_pipeline(Pipeline):
         TextAnsiFormatter.prYellow('Using linking')
         if check_for_file('main.c') and check_for_file('start_point.asm'):
             f'{self.instruments.assemble} -f elf32 start_point.asm -o kasm.o'
-            op_res = os.system(f'{self.instruments.link} -m elf_i386 -T link.ld -o kernel kasm.o kc.o')
+            op_res = IPipeline.exec_command(f'{self.instruments.link} -m elf_i386 -T link.ld -o kernel kasm.o kc.o')
             if op_res == 0:
                 TextAnsiFormatter.prGreen('Successful command execution')
             else:
@@ -65,7 +63,7 @@ class Kernel_pipeline(Pipeline):
                 TextAnsiFormatter.prYellow('Try with stack protector')
 
                 # gcc -fno-stack-protector -m32 -c main.c -o kc.o
-                another_try = os.system(f'{self.instruments.compile} -fno-stack-protector -m32 -c main.c -o kc.o')
+                another_try = IPipeline.exec_command(f'{self.instruments.compile} -fno-stack-protector -m32 -c main.c -o kc.o')
                 self.link()  # another try of linker usage
                 if another_try == 0:
                     TextAnsiFormatter.prGreen('Success retry')
@@ -79,4 +77,4 @@ class Kernel_pipeline(Pipeline):
         pass
 
     def deploy(self) -> None:
-        os.system(f'{self.instruments.deploy} kernel')
+        IPipeline.exec_command(f'{self.instruments.deploy} kernel')

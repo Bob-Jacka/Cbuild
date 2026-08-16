@@ -14,6 +14,7 @@ class Pipeline_runner:
 
     def __init__(self, config):
         pipelines_count = len(config.pipelines)
+        self.config_ptr = config
         if pipelines_count > 1:
             TextAnsiFormatter.prYellow('Found several available pipelines in directory:')
             for num, pipeline in enumerate(config.pipelines):
@@ -31,23 +32,37 @@ class Pipeline_runner:
             stage_count = len(self.active_pipeline.stages)
             while True:
                 print()  # just new line
-                TextAnsiFormatter.prYellow(f'Active pipeline name: {self.active_pipeline.pipeline_name}')
+                TextAnsiFormatter.prYellow(f'Active pipeline name: {self.config_ptr.config_name}')
+                TextAnsiFormatter.prYellow(f'Active pipeline language: {self.active_pipeline.language if self.active_pipeline.language is not None else 'UNKNOWN'}')
+                TextAnsiFormatter.prYellow(f'Active pipeline type: {self.active_pipeline.type if self.active_pipeline.type is not None else 'UNKNOWN'}')
                 TextAnsiFormatter.prYellow('Choose option:')
                 for num, option in enumerate(self.active_pipeline.stages):
                     print(f'{num}: {option.lower()}')
                 print(f'{stage_count}: All build stages')  # last, but not least - all stages run
-                print(f'{CLOSE_MENU_CODE}. Exit from pipeline runner')
+                print(f'{CLOSE_MENU_CODE}. Exit from pipeline')
+                print(f'{CLOSE_MENU_CODE + 1}. Exit from app')
 
                 user_input = int_input_from_user(stage_count, 'Enter pipeline action')
+                # Special pipeline actions:
                 if user_input == stage_count:
                     self.active_pipeline.all_build_stages()
                     continue
+
+                # exit from pipeline (if several pipelines available)
                 if user_input == CLOSE_MENU_CODE:
                     print(f'Exit from {self.active_pipeline.pipeline_name} build system')
                     break
 
-                function = getattr(self.active_pipeline, self.active_pipeline.stages[user_input].lower())
-                function()
+                # exit from app directly
+                if user_input == CLOSE_MENU_CODE + 1:
+                    print(f'Exit from build system')
+                    exit(0)
+
+                try:
+                    function = getattr(self.active_pipeline, self.active_pipeline.stages[user_input].lower())
+                    function()
+                except Exception as e:
+                    TextAnsiFormatter.prRed(f'Exception occurred during execution pipeline action: {e}')
 
         else:
             print(f'Your system is not allowed - {sys.platform}')

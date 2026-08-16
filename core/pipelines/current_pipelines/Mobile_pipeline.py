@@ -1,12 +1,11 @@
 """
 Pipeline for C# android experience on my phone
 """
-import subprocess
 
 from common_py_lib.entities.Formatter import TextAnsiFormatter
 
 from core.Tools import Tools
-from core.pipelines.Pipeline import Pipeline
+from core.pipelines.IPipeline import IPipeline
 
 mobile_tools = {
     'compile': 'build -t:SignAndroidPackage -c Release',
@@ -14,14 +13,21 @@ mobile_tools = {
 }
 
 
-class Mobile_pipeline(Pipeline):
+class Mobile_pipeline(IPipeline):
 
     def __init__(self, pipeline_name: str):
         self.instruments = Tools(**mobile_tools)
         super().__init__(pipeline_name)
 
+    def check_device(self):
+        op_res = IPipeline.exec_command('adb devices')
+        if op_res == 0:
+            TextAnsiFormatter.prGreen('Device is connected')
+        else:
+            raise Exception('Device is not connected')
+
     def compile(self) -> None:
-        op_res = subprocess.run(f'dotnet {self.instruments.compile}').returncode
+        op_res = IPipeline.exec_command(f'dotnet {self.instruments.compile}')
         if op_res == 0:
             TextAnsiFormatter.prGreen('Successful command execution')
         else:
@@ -31,7 +37,8 @@ class Mobile_pipeline(Pipeline):
         pass
 
     def deploy(self) -> None:
-        op_res = subprocess.run(f'dotnet {self.instruments.deploy}').returncode
+        self.check_device()
+        op_res = IPipeline.exec_command(f'dotnet {self.instruments.deploy}')
         if op_res == 0:
             TextAnsiFormatter.prGreen('Successful deploy command execution')
         else:
